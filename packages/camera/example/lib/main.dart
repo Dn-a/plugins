@@ -2,8 +2,6 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-// ignore_for_file: public_member_api_docs
-
 import 'dart:async';
 import 'dart:io';
 
@@ -237,7 +235,17 @@ class _CameraExampleHomeState extends State<CameraExampleHome>
                   controller.value.isRecordingVideo
               ? onStopButtonPressed
               : null,
-        )
+        ),
+        IconButton(
+          icon: const Icon(Icons.zoom_in),
+          color: Colors.blue,
+          onPressed: controller != null ? onZoomInButtonPressed : null,
+        ),
+        IconButton(
+          icon: const Icon(Icons.zoom_out),
+          color: Colors.blue,
+          onPressed: controller != null ? onZoomOutButtonPressed : null,
+        ),
       ],
     );
   }
@@ -329,6 +337,20 @@ class _CameraExampleHomeState extends State<CameraExampleHome>
       if (mounted) setState(() {});
       showInSnackBar('Video recorded to: $videoPath');
     });
+  }
+
+  void onZoomInButtonPressed() {
+    if (controller == null) {
+      return;
+    }
+    controller.zoomIn();
+  }
+
+  void onZoomOutButtonPressed() {
+    if (controller == null) {
+      return;
+    }
+    controller.zoomOut();
   }
 
   void onPauseButtonPressed() {
@@ -474,7 +496,7 @@ class CameraApp extends StatelessWidget {
   }
 }
 
-List<CameraDescription> cameras = [];
+List<CameraDescription> cameras;
 
 Future<void> main() async {
   // Fetch the available cameras before initializing the app.

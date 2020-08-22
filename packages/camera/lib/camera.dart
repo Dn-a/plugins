@@ -38,7 +38,6 @@ enum ResolutionPreset {
   max,
 }
 
-// ignore: inference_failure_on_function_return_type
 typedef onLatestImageAvailable = Function(CameraImage image);
 
 /// Returns the resolution preset as a String.
@@ -445,7 +444,7 @@ class CameraController extends ValueNotifier<CameraValue> {
       throw CameraException(e.code, e.message);
     }
 
-    await _imageStreamSubscription.cancel();
+    _imageStreamSubscription.cancel();
     _imageStreamSubscription = null;
   }
 
@@ -585,5 +584,21 @@ class CameraController extends ValueNotifier<CameraValue> {
       );
       await _eventSubscription?.cancel();
     }
+  }
+
+  Future<void> zoomIn() async {
+    await _channel.invokeMethod<void>('zoomIn');
+  }
+
+  ///
+  /// change zoom by specific [step].
+  /// with a negative step, the zoom will be 1
+  ///
+  Future<void> zoom(int step) async {
+    await _channel.invokeMethod<void>('zoom', <String, dynamic>{'step': step});
+  }
+
+  Future<void> zoomOut() async {
+    await _channel.invokeMethod<void>('zoomOut');
   }
 }
