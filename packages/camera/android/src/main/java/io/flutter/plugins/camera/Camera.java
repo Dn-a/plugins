@@ -40,6 +40,9 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import java.util.Comparator;
+import java.util.Collections;
+
 public class Camera {
   private final SurfaceTextureEntry flutterTexture;
   private final CameraManager cameraManager;
@@ -61,9 +64,11 @@ public class Camera {
   private boolean recordingVideo;
   private CamcorderProfile recordingProfile;
   private int currentOrientation = ORIENTATION_UNKNOWN;
+  private CameraCharacteristics characteristics;
 
   public float zoomLevel = 1f;
   private Rect zoom;
+  private byte quality = 91;
   protected CameraCharacteristics cameraCharacteristics;
 
   // Mirrors camera.dart
@@ -106,7 +111,7 @@ public class Camera {
         };
     orientationEventListener.enable();
 
-    CameraCharacteristics characteristics = cameraManager.getCameraCharacteristics(cameraName);
+    characteristics = cameraManager.getCameraCharacteristics(cameraName);
     StreamConfigurationMap streamConfigurationMap =
         characteristics.get(CameraCharacteristics.SCALER_STREAM_CONFIGURATION_MAP);
     //noinspection ConstantConditions
@@ -119,7 +124,13 @@ public class Camera {
     ResolutionPreset preset = ResolutionPreset.valueOf(resolutionPreset);
     recordingProfile =
         CameraUtils.getBestAvailableCamcorderProfileForResolutionPreset(cameraName, preset);
-    captureSize = new Size(recordingProfile.videoFrameWidth, recordingProfile.videoFrameHeight);
+    Size largest = Collections.max(Arrays.asList(streamConfigurationMap.getOutputSizes(ImageFormat.JPEG)), new CompareSizesByArea());
+
+    if(preset==ResolutionPreset.max)
+      captureSize = new Size(largest.getWidth(), largest.getHeight());
+    else
+      captureSize = new Size(recordingProfile.videoFrameWidth, recordingProfile.videoFrameHeight);
+
     previewSize = computeBestPreviewSize(cameraName, preset);
   }
 
@@ -257,6 +268,7 @@ public class Camera {
       captureBuilder.addTarget(pictureImageReader.getSurface());
       captureBuilder.set(CaptureRequest.JPEG_ORIENTATION, getMediaOrientation());
       setScalerCropRegion(captureBuilder, zoom);
+      setQuality(captureBuilder, quality);
 
       cameraCaptureSession.capture(
           captureBuilder.build(),
@@ -554,6 +566,10 @@ public class Camera {
     captureRequestBuilder.set(CaptureRequest.SCALER_CROP_REGION, zoom);
   }
 
+  private void setQuality(CaptureRequest.Builder captureRequestBuilder, byte quality) {
+    captureRequestBuilder.set(CaptureRequest.JPEG_QUALITY, quality);
+  }
+
   private int getMediaOrientation() {
     final int sensorOrientationOffset =
         (currentOrientation == ORIENTATION_UNKNOWN)
@@ -561,4 +577,16 @@ public class Camera {
             : (isFrontFacing) ? -currentOrientation : currentOrientation;
     return (sensorOrientationOffset + sensorOrientation + 360) % 360;
   }
+
+  static class CompareSizesByArea implements Comparator<Size> {
+
+    @Override
+    public int compare(Size lhs, Size rhs) {
+      // We cast here to ensure the multiplications won't overflow
+      return Long.signum((long) lhs.getWidth() * lhs.getHeight() -
+              (long) rhs.getWidth() * rhs.getHeight());
+    }
+  }
 }
+
+

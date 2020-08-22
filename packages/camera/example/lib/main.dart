@@ -7,8 +7,11 @@ import 'dart:io';
 
 import 'package:camera/camera.dart';
 import 'package:flutter/material.dart';
+import 'package:path/path.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:video_player/video_player.dart';
+
+import 'util/folder_manager.dart';
 
 class CameraExampleHome extends StatefulWidget {
   @override
@@ -289,7 +292,7 @@ class _CameraExampleHomeState extends State<CameraExampleHome>
     }
     controller = CameraController(
       cameraDescription,
-      ResolutionPreset.medium,
+      ResolutionPreset.veryHigh,
       enableAudio: enableAudio,
     );
 
@@ -462,10 +465,17 @@ class _CameraExampleHomeState extends State<CameraExampleHome>
       showInSnackBar('Error: select a camera first.');
       return null;
     }
-    final Directory extDir = await getApplicationDocumentsDirectory();
+    /*final Directory extDir = await getApplicationDocumentsDirectory();
     final String dirPath = '${extDir.path}/Pictures/flutter_test';
     await Directory(dirPath).create(recursive: true);
-    final String filePath = '$dirPath/${timestamp()}.jpg';
+    final String filePath = '$dirPath/${timestamp()}.jpg';*/
+
+    final String pathFolder = await FolderManager().createFolder(name: 'test');
+
+    final String filePath = join(
+      pathFolder,
+      '${DateTime.now()}.png',
+    );
 
     if (controller.value.isTakingPicture) {
       // A capture is already pending, do nothing.
